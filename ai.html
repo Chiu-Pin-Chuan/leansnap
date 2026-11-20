@@ -96,6 +96,55 @@
         </div>
     </div>
 
+    <!-- 月曆日期選擇器彈窗 -->
+    <div id="calendar-modal" onclick="if(event.target === this) closeCalendarModal()" class="fixed inset-0 z-50 hidden items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-3 sm:p-4">
+        <div class="bg-white dark:bg-slate-900 w-full max-w-sm rounded-3xl p-5 shadow-2xl border border-slate-200 dark:border-slate-800 transform transition-all mb-1 sm:mb-0">
+            <!-- 月份切換標題列 -->
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center gap-1">
+                    <button onclick="changeCalendarMonth(-1)" class="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 active:scale-90 transition" aria-label="上個月">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"></path></svg>
+                    </button>
+                    <h3 id="calendar-month-title" class="text-base font-extrabold px-2 min-w-[116px] text-center">2026 年 11 月</h3>
+                    <button onclick="changeCalendarMonth(1)" class="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 active:scale-90 transition" aria-label="下個月">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"></path></svg>
+                    </button>
+                </div>
+                <div class="flex items-center gap-1.5">
+                    <button onclick="selectTodayFromCalendar()" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-brand-50 dark:bg-brand-950/70 text-brand-600 dark:text-brand-400 active:scale-95 transition">
+                        回到今天
+                    </button>
+                    <button onclick="closeCalendarModal()" class="p-1.5 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 active:scale-90 transition" aria-label="關閉月曆">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 星期標題列 -->
+            <div class="grid grid-cols-7 gap-1 text-center text-[11px] font-bold text-slate-400 mb-2">
+                <div class="text-rose-400">日</div>
+                <div>一</div>
+                <div>二</div>
+                <div>三</div>
+                <div>四</div>
+                <div>五</div>
+                <div class="text-sky-400">六</div>
+            </div>
+
+            <!-- 當月日期格子容器 -->
+            <div id="calendar-days-grid" class="grid grid-cols-7 gap-1 text-center">
+                <!-- 動態渲染當月日期 -->
+            </div>
+
+            <!-- 圖例說明 -->
+            <div class="flex items-center justify-center gap-4 mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 text-[11px] text-slate-400">
+                <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-brand-500"></span>已選日期</span>
+                <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full border border-brand-500"></span>今天</span>
+                <span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>有飲食紀錄</span>
+            </div>
+        </div>
+    </div>
+
     <!-- 主容器 -->
     <main class="max-w-lg mx-auto px-4 pt-3">
 
@@ -113,7 +162,10 @@
                     <button onclick="changeDate(-1)" class="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 active:scale-90 transition" aria-label="前一天">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"></path></svg>
                     </button>
-                    <button onclick="resetToToday()" id="current-date-label" class="px-2.5 py-1 text-xs font-bold min-w-[84px] text-center">今天</button>
+                    <button onclick="openCalendarModal()" class="px-2.5 py-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 active:scale-95 transition flex items-center gap-1.5 text-xs font-bold min-w-[96px] justify-center" aria-label="開啟月曆選擇日期">
+                        <svg class="w-3.5 h-3.5 text-brand-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                        <span id="current-date-label">今天</span>
+                    </button>
                     <button onclick="changeDate(1)" class="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 active:scale-90 transition" aria-label="後一天">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"></path></svg>
                     </button>
@@ -534,6 +586,10 @@
         // 當前檢視的日期 (YYYY-MM-DD 格式，使用本地時區)
         let selectedDateStr = getLocalDateString(new Date());
 
+        // 月曆彈窗目前瀏覽的年份與月份 (0-11)
+        let calendarViewYear = new Date().getFullYear();
+        let calendarViewMonth = new Date().getMonth();
+
         // 當前掃描狀態暫存
         let currentScanState = {
             base64Full: '',       // 壓縮後的完整 Data URL (含前綴，用於預覽與儲存小縮圖)
@@ -610,14 +666,156 @@
 
         /**
          * ============================================================================
-         * 分頁導覽與 UI 互動控制
+         * 儀表板渲染與日期切換 / 互動月曆選擇器
          * ============================================================================
+         */
+        function changeDate(offsetDays) {
+            const parts = selectedDateStr.split('-').map(Number);
+            const dateObj = new Date(parts[0], parts[1] - 1, parts[2]);
+            dateObj.setDate(dateObj.getDate() + offsetDays);
+            selectedDateStr = getLocalDateString(dateObj);
+            updateDateHeader();
+            renderDashboard();
+        }
+
+        function resetToToday() {
+            selectedDateStr = getLocalDateString(new Date());
+            updateDateHeader();
+            renderDashboard();
+        }
+
+        function updateDateHeader() {
+            const todayStr = getLocalDateString(new Date());
+            const labelEl = document.getElementById('current-date-label');
+            const [, m, d] = selectedDateStr.split('-');
+            if (selectedDateStr === todayStr) {
+                labelEl.textContent = `今天 · ${Number(m)}/${Number(d)}`;
+            } else {
+                labelEl.textContent = `${Number(m)}月${Number(d)}日`;
+            }
+        }
+
+        /**
+         * 開啟當月月曆選擇器彈窗
+         */
+        function openCalendarModal() {
+            const [y, m] = selectedDateStr.split('-').map(Number);
+            calendarViewYear = y;
+            calendarViewMonth = m - 1;
+            renderCalendarGrid();
+
+            const modal = document.getElementById('calendar-modal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        /**
+         * 關閉月曆選擇器彈窗
+         */
+        function closeCalendarModal() {
+            const modal = document.getElementById('calendar-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        /**
+         * 切換月曆彈窗顯示的月份
+         */
+        function changeCalendarMonth(delta) {
+            calendarViewMonth += delta;
+            if (calendarViewMonth < 0) {
+                calendarViewMonth = 11;
+                calendarViewYear -= 1;
+            } else if (calendarViewMonth > 11) {
+                calendarViewMonth = 0;
+                calendarViewYear += 1;
+            }
+            renderCalendarGrid();
+        }
+
+        /**
+         * 從月曆彈窗一鍵跳回今天並關閉
+         */
+        function selectTodayFromCalendar() {
+            selectedDateStr = getLocalDateString(new Date());
+            updateDateHeader();
+            renderDashboard();
+            closeCalendarModal();
+        }
+
+        /**
+         * 點選月曆中的特定日期並關閉彈窗
+         */
+        function selectDateFromCalendar(dateStr) {
+            selectedDateStr = dateStr;
+            updateDateHeader();
+            renderDashboard();
+            closeCalendarModal();
+        }
+
+        /**
+         * 渲染月曆日期格子（標示已選日期、今天與有紀錄的日期小圓點）
+         */
+        function renderCalendarGrid() {
+            document.getElementById('calendar-month-title').textContent = `${calendarViewYear} 年 ${calendarViewMonth + 1} 月`;
+
+            const gridEl = document.getElementById('calendar-days-grid');
+            const firstDayOfWeek = new Date(calendarViewYear, calendarViewMonth, 1).getDay();
+            const daysInMonth = new Date(calendarViewYear, calendarViewMonth + 1, 0).getDate();
+            const todayStr = getLocalDateString(new Date());
+
+            // 整理有飲食紀錄的日期集合，方便在月曆上顯示小提示點
+            const loggedDatesSet = new Set(mealLogs.map(log => log.date));
+
+            let cellsHtml = '';
+
+            // 補齊月初空白格子
+            for (let i = 0; i < firstDayOfWeek; i++) {
+                cellsHtml += `<div class="h-10"></div>`;
+            }
+
+            // 產生當月每一天
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dateStr = `${calendarViewYear}-${String(calendarViewMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                const isSelected = dateStr === selectedDateStr;
+                const isToday = dateStr === todayStr;
+                const hasLogs = loggedDatesSet.has(dateStr);
+
+                let btnClasses = 'relative h-10 w-full rounded-2xl text-sm font-bold flex flex-col items-center justify-center transition active:scale-90 ';
+                if (isSelected) {
+                    btnClasses += 'bg-brand-500 text-white shadow-md shadow-brand-500/30';
+                } else if (isToday) {
+                    btnClasses += 'border-2 border-brand-500 text-brand-600 dark:text-brand-400 bg-brand-50/40 dark:bg-brand-950/30';
+                } else {
+                    btnClasses += 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800';
+                }
+
+                const dotColor = isSelected ? 'bg-white' : 'bg-emerald-500';
+                const dotHtml = hasLogs
+                    ? `<span class="w-1.5 h-1.5 rounded-full ${dotColor} mt-0.5"></span>`
+                    : `<span class="w-1.5 h-1.5 mt-0.5 opacity-0"></span>`;
+
+                cellsHtml += `
+                    <button type="button" onclick="selectDateFromCalendar('${dateStr}')" class="${btnClasses}">
+                        <span class="leading-none">${day}</span>
+                        ${dotHtml}
+                    </button>
+                `;
+            }
+
+            gridEl.innerHTML = cellsHtml;
+        }
+
+        /**
+         * 切換底部導覽分頁 (dashboard / scan / settings)
          */
         function switchTab(tabName) {
             const tabs = ['dashboard', 'scan', 'settings'];
             tabs.forEach(t => {
                 const sec = document.getElementById(`tab-${t}`);
                 const nav = document.getElementById(`nav-${t}`);
+                if (!sec || !nav) return;
+
                 if (t === tabName) {
                     sec.classList.remove('hidden');
                     if (t !== 'scan') {
@@ -1022,35 +1220,9 @@
 
         /**
          * ============================================================================
-         * 儀表板渲染與日期切換
+         * 儀表板渲染邏輯
          * ============================================================================
          */
-        function changeDate(offsetDays) {
-            const parts = selectedDateStr.split('-').map(Number);
-            const dateObj = new Date(parts[0], parts[1] - 1, parts[2]);
-            dateObj.setDate(dateObj.getDate() + offsetDays);
-            selectedDateStr = getLocalDateString(dateObj);
-            updateDateHeader();
-            renderDashboard();
-        }
-
-        function resetToToday() {
-            selectedDateStr = getLocalDateString(new Date());
-            updateDateHeader();
-            renderDashboard();
-        }
-
-        function updateDateHeader() {
-            const todayStr = getLocalDateString(new Date());
-            const labelEl = document.getElementById('current-date-label');
-            if (selectedDateStr === todayStr) {
-                labelEl.textContent = '今天';
-            } else {
-                const [, m, d] = selectedDateStr.split('-');
-                labelEl.textContent = `${Number(m)}月${Number(d)}日`;
-            }
-        }
-
         function renderDashboard() {
             // 篩選當日紀錄
             const dayLogs = mealLogs.filter(item => item.date === selectedDateStr);

@@ -147,6 +147,38 @@
         </div>
     </div>
 
+    <!-- AI 下一餐外食推薦彈窗 -->
+    <div id="next-meal-modal" onclick="if(event.target === this) closeNextMealModal()" class="fixed inset-0 z-50 hidden items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-3 sm:p-4">
+        <div class="bg-white dark:bg-slate-900 w-full max-w-md rounded-3xl p-5 shadow-2xl border border-slate-200 dark:border-slate-800 max-h-[85vh] flex flex-col">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+                <div>
+                    <h3 class="text-base font-extrabold flex items-center gap-1.5">
+                        <span>🤖</span> AI 下一餐外食／超商推薦
+                    </h3>
+                    <p id="next-meal-quota-summary" class="text-[11px] text-slate-400 mt-0.5">依據今日剩餘額度自動配餐</p>
+                </div>
+                <button onclick="closeNextMealModal()" class="p-1.5 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 active:scale-90 transition" aria-label="關閉推薦視窗">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+
+            <!-- 內容捲動區 -->
+            <div id="next-meal-content" class="py-4 overflow-y-auto space-y-3 flex-1 no-scrollbar">
+                <!-- 動態載入或顯示推薦方案 -->
+            </div>
+
+            <!-- 底部重新生成按鈕 -->
+            <div class="pt-3 border-t border-slate-100 dark:border-slate-800 flex gap-2">
+                <button id="regen-next-meal-btn" onclick="fetchAiNextMealSuggestions()" class="flex-1 py-2.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-md shadow-indigo-500/20 active:scale-95 transition flex items-center justify-center gap-1.5">
+                    <span>🔄</span> 換一組搭配建議
+                </button>
+                <button onclick="closeNextMealModal()" class="py-2.5 px-4 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-bold active:scale-95 transition">
+                    關閉
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- 主容器 -->
     <main class="max-w-lg mx-auto px-4 pt-3">
 
@@ -249,19 +281,89 @@
                 </div>
             </div>
 
-            <!-- 快速拍照引導橫幅 -->
-            <button onclick="switchTab('scan')" class="w-full bg-gradient-to-r from-brand-500 to-emerald-600 text-white rounded-2xl p-4 shadow-lg shadow-brand-500/20 flex items-center justify-between active:scale-[0.98] transition">
-                <div class="flex items-center gap-3 text-left">
-                    <div class="w-11 h-11 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center text-2xl">
-                        📸
+            <!-- 每日喝水量一鍵打卡卡片 -->
+            <div class="bg-white dark:bg-slate-900 rounded-3xl p-4 shadow-sm border border-slate-200/80 dark:border-slate-800 space-y-3">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-10 h-10 rounded-2xl bg-sky-50 dark:bg-sky-950/60 text-sky-500 flex items-center justify-center text-xl">
+                            💧
+                        </div>
+                        <div>
+                            <div class="flex items-center gap-1.5">
+                                <span class="font-bold text-sm">今日喝水量</span>
+                                <span id="water-pct-badge" class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-sky-100 dark:bg-sky-950 text-sky-700 dark:text-sky-300">0%</span>
+                            </div>
+                            <div class="text-xs text-slate-400 mt-0.5 flex items-center gap-1">
+                                <span>已喝</span>
+                                <button type="button" onclick="toggleWaterManualInput()" class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-lg bg-sky-50/80 dark:bg-sky-950/50 hover:bg-sky-100 dark:hover:bg-sky-900/60 text-sky-600 dark:text-sky-400 font-extrabold text-sm transition active:scale-95" title="點擊手動輸入喝水量">
+                                    <span id="dash-water-val">0</span>
+                                    <svg class="w-3 h-3 opacity-75" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                                </button>
+                                <span>/ <span id="dash-water-target">2,450</span> ml</span>
+                            </div>
+                        </div>
                     </div>
-                    <div>
-                        <div class="font-bold text-sm">拍下這一餐，AI 立即估算熱量</div>
-                        <div class="text-xs text-emerald-100">支援相機直拍與相簿選圖，自動分析蛋白質</div>
+                    <div class="flex items-center gap-1.5">
+                        <button onclick="addWater(-250)" class="w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-xs font-bold active:scale-90 transition flex items-center justify-center" title="減少 250ml" aria-label="減少 250 毫升">
+                            -250
+                        </button>
+                        <button onclick="addWater(250)" class="px-3 py-2 rounded-xl bg-sky-50 dark:bg-sky-950/70 text-sky-600 dark:text-sky-300 border border-sky-200/80 dark:border-sky-800/50 text-xs font-extrabold active:scale-95 transition">
+                            +250ml
+                        </button>
+                        <button onclick="addWater(500)" class="px-3 py-2 rounded-xl bg-sky-500 hover:bg-sky-600 text-white text-xs font-extrabold shadow-sm shadow-sky-500/25 active:scale-95 transition">
+                            +500ml
+                        </button>
                     </div>
                 </div>
-                <svg class="w-5 h-5 text-white/80" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"></path></svg>
-            </button>
+
+                <!-- 手動輸入今日總喝水量展開列 -->
+                <div id="water-manual-box" class="hidden pt-1">
+                    <div class="flex items-center gap-2 bg-slate-50 dark:bg-slate-800/70 p-2 rounded-2xl border border-slate-200/80 dark:border-slate-700/70">
+                        <input type="number" id="water-manual-input" inputmode="numeric" min="0" step="10" placeholder="輸入今天總共喝了幾 ml（例如 1800）" onkeydown="if(event.key==='Enter') applyManualWaterInput()" class="flex-1 bg-white dark:bg-slate-900 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:border-sky-500">
+                        <button type="button" onclick="applyManualWaterInput()" class="px-3.5 py-2 rounded-xl bg-sky-500 hover:bg-sky-600 text-white text-xs font-extrabold active:scale-95 transition whitespace-nowrap">
+                            套用
+                        </button>
+                        <button type="button" onclick="toggleWaterManualInput(false)" class="px-2.5 py-2 rounded-xl bg-slate-200/80 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs font-bold active:scale-95 transition">
+                            取消
+                        </button>
+                    </div>
+                </div>
+
+                <div class="w-full h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                    <div id="dash-water-bar" class="h-full bg-gradient-to-r from-sky-400 to-cyan-500 rounded-full transition-all duration-500" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <!-- 快速操作區：AI 拍照辨識 + AI 下一餐外食推薦 -->
+            <div class="grid grid-cols-1 gap-2.5">
+                <button onclick="switchTab('scan')" class="w-full bg-gradient-to-r from-brand-500 to-emerald-600 text-white rounded-2xl p-4 shadow-lg shadow-brand-500/20 flex items-center justify-between active:scale-[0.98] transition">
+                    <div class="flex items-center gap-3 text-left">
+                        <div class="w-11 h-11 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center text-2xl">
+                            📸
+                        </div>
+                        <div>
+                            <div class="font-bold text-sm">拍下這一餐，AI 立即估算熱量</div>
+                            <div class="text-xs text-emerald-100">支援相機直拍與相簿選圖，自動分析蛋白質</div>
+                        </div>
+                    </div>
+                    <svg class="w-5 h-5 text-white/80" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"></path></svg>
+                </button>
+
+                <button onclick="openNextMealModal()" class="w-full bg-white dark:bg-slate-900 hover:bg-indigo-50/50 dark:hover:bg-slate-800/80 rounded-2xl p-3.5 shadow-sm border border-indigo-200/80 dark:border-indigo-900/60 flex items-center justify-between active:scale-[0.98] transition">
+                    <div class="flex items-center gap-3 text-left">
+                        <div class="w-10 h-10 rounded-2xl bg-indigo-50 dark:bg-indigo-950/70 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-xl">
+                            🤖
+                        </div>
+                        <div>
+                            <div class="font-bold text-sm text-slate-900 dark:text-white">問 AI 下一餐怎麼吃？</div>
+                            <div class="text-xs text-slate-500 dark:text-slate-400">依剩餘熱量與蛋白質額度，推薦台灣超商／外食搭配</div>
+                        </div>
+                    </div>
+                    <span class="text-xs font-bold px-2.5 py-1 rounded-xl bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400">
+                        智能配餐
+                    </span>
+                </button>
+            </div>
 
             <!-- 飲食紀錄清單標題 -->
             <div class="flex items-center justify-between pt-2">
@@ -374,7 +476,7 @@
                     </div>
                     <div>
                         <label for="input-grams" class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">估計重量 (g)</label>
-                        <input type="number" id="input-grams" placeholder="350" class="w-full px-3 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm font-semibold focus:outline-none focus:border-brand-500">
+                        <input type="number" id="input-grams" placeholder="350" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm font-semibold focus:outline-none focus:border-brand-500">
                     </div>
                 </div>
 
@@ -431,54 +533,92 @@
         <section id="tab-settings" class="hidden space-y-4">
             <header class="py-1">
                 <h1 class="text-xl font-extrabold tracking-tight">減脂目標與設定</h1>
-                <p class="text-xs text-slate-500 dark:text-slate-400">設定每日熱量赤字目標、TDEE 計算與 iOS 安裝教學</p>
+                <p class="text-xs text-slate-500 dark:text-slate-400">輸入身體數據由 AI 量身試算每日熱量與營養素</p>
             </header>
+
+            <!-- 個人身體檔案與 AI 熱量試算卡片 -->
+            <div class="bg-white dark:bg-slate-900 rounded-3xl p-5 shadow-sm border border-slate-200/80 dark:border-slate-800 space-y-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 class="font-bold text-base flex items-center gap-1.5">
+                            <span>🧍</span> 個人身體數據與 AI 試算
+                        </h2>
+                        <p class="text-[11px] text-slate-400 mt-0.5">輸入年齡、身高、體重，讓 AI 評估每日減脂熱量</p>
+                    </div>
+                    <span id="profile-bmi-badge" class="text-[11px] font-bold px-2.5 py-1 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+                        BMI --
+                    </span>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3 text-xs">
+                    <div>
+                        <label for="calc-gender" class="block font-semibold text-slate-500 dark:text-slate-400 mb-1">生理性別</label>
+                        <select id="calc-gender" oninput="updateLiveBmiBadge()" class="w-full px-3 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-bold text-sm focus:outline-none focus:border-brand-500">
+                            <option value="male">男性</option>
+                            <option value="female">女性</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="calc-age" class="block font-semibold text-slate-500 dark:text-slate-400 mb-1">年齡 (歲)</label>
+                        <input type="number" id="calc-age" value="28" min="12" max="100" oninput="updateLiveBmiBadge()" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-bold text-sm focus:outline-none focus:border-brand-500">
+                    </div>
+                    <div>
+                        <label for="calc-height" class="block font-semibold text-slate-500 dark:text-slate-400 mb-1">身高 (cm)</label>
+                        <input type="number" id="calc-height" value="172" min="100" max="230" step="0.5" oninput="updateLiveBmiBadge()" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-bold text-sm focus:outline-none focus:border-brand-500">
+                    </div>
+                    <div>
+                        <label for="calc-weight" class="block font-semibold text-slate-500 dark:text-slate-400 mb-1">目前體重 (kg)</label>
+                        <input type="number" id="calc-weight" value="70" min="30" max="250" step="0.1" oninput="updateLiveBmiBadge()" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-bold text-sm focus:outline-none focus:border-brand-500">
+                    </div>
+                    <div class="col-span-2">
+                        <label for="calc-activity" class="block font-semibold text-slate-500 dark:text-slate-400 mb-1">日常運動與活動量</label>
+                        <select id="calc-activity" class="w-full px-3 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-bold text-xs focus:outline-none focus:border-brand-500">
+                            <option value="1.2">久坐辦公室、幾乎不運動 (1.2)</option>
+                            <option value="1.375" selected>輕度活動：每週運動 1-3 天 (1.375)</option>
+                            <option value="1.55">中度活動：每週重訓/有氧 3-5 天 (1.55)</option>
+                            <option value="1.725">高度活動：每週高強度訓練 6-7 天 (1.725)</option>
+                        </select>
+                    </div>
+                    <div class="col-span-2">
+                        <label for="calc-pace" class="block font-semibold text-slate-500 dark:text-slate-400 mb-1">減脂目標節奏</label>
+                        <select id="calc-pace" class="w-full px-3 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-bold text-xs focus:outline-none focus:border-brand-500">
+                            <option value="gentle">溫和穩健減脂（不易餓、適合長期維持）</option>
+                            <option value="standard" selected>標準高蛋白減脂（兼顧減脂速度與保留肌肉）</option>
+                            <option value="aggressive">積極減脂衝刺（較大熱量赤字、需嚴格控管飲食）</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- 雙按鈕：AI 智慧試算 + 公式快速試算 -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1">
+                    <button id="ai-calc-goals-btn" onclick="calculateGoalsWithAI()" class="sm:col-span-2 py-3 px-4 rounded-2xl bg-gradient-to-r from-brand-500 to-emerald-600 text-white text-xs font-extrabold shadow-lg shadow-brand-500/25 active:scale-95 transition flex items-center justify-center gap-1.5">
+                        <span id="ai-calc-spinner" class="hidden w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin"></span>
+                        <span id="ai-calc-btn-text">✨ AI 試算專屬熱量與營養素</span>
+                    </button>
+                    <button onclick="calculateAndApplyTDEE()" class="py-3 px-3 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs font-bold active:scale-95 transition">
+                        🧮 公式快算
+                    </button>
+                </div>
+
+                <!-- AI 試算評估報告卡片 (試算完成後顯示) -->
+                <div id="ai-goal-report-box" class="hidden bg-brand-50/70 dark:bg-brand-950/35 border border-brand-200/80 dark:border-brand-800/50 rounded-2xl p-4 space-y-2.5 text-xs">
+                    <div class="flex items-center justify-between">
+                        <span class="font-extrabold text-brand-800 dark:text-brand-300 flex items-center gap-1.5">
+                            <span>🤖</span> AI 專屬減脂熱量評估
+                        </span>
+                        <span id="ai-report-metrics" class="text-[11px] font-bold px-2 py-0.5 rounded-lg bg-white/80 dark:bg-slate-900/80 text-brand-700 dark:text-brand-400">
+                            BMR -- · TDEE --
+                        </span>
+                    </div>
+                    <p id="ai-report-summary" class="text-slate-700 dark:text-slate-200 leading-relaxed"></p>
+                    <div id="ai-report-tips" class="text-[11px] text-slate-600 dark:text-slate-300 bg-white/70 dark:bg-slate-900/60 rounded-xl p-2.5 leading-relaxed"></div>
+                </div>
+            </div>
 
             <!-- 每日營養素目標設定卡片 -->
             <div class="bg-white dark:bg-slate-900 rounded-3xl p-5 shadow-sm border border-slate-200/80 dark:border-slate-800 space-y-4">
                 <div class="flex items-center justify-between">
-                    <h2 class="font-bold text-base">🎯 每日減脂攝取目標</h2>
-                    <button onclick="toggleTdeeCalculator()" class="text-xs font-bold text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-950/60 px-3 py-1.5 rounded-xl active:scale-95 transition">
-                        🧮 TDEE 自動試算
-                    </button>
-                </div>
-
-                <!-- 內建簡易 TDEE 與減脂赤字計算器 (可收合) -->
-                <div id="tdee-calculator-panel" class="hidden bg-slate-50 dark:bg-slate-800/70 rounded-2xl p-4 space-y-3 border border-slate-200/80 dark:border-slate-700">
-                    <div class="text-xs font-bold text-slate-700 dark:text-slate-200">輸入身體數值計算建議減脂熱量（TDEE - 350 kcal）</div>
-                    <div class="grid grid-cols-2 gap-2.5 text-xs">
-                        <div>
-                            <label class="block text-slate-500 mb-1">生理性別</label>
-                            <select id="calc-gender" class="w-full p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 font-semibold">
-                                <option value="male">男性</option>
-                                <option value="female">女性</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-slate-500 mb-1">年齡 (歲)</label>
-                            <input type="number" id="calc-age" value="28" class="w-full p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 font-semibold">
-                        </div>
-                        <div>
-                            <label class="block text-slate-500 mb-1">身高 (cm)</label>
-                            <input type="number" id="calc-height" value="172" class="w-full p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 font-semibold">
-                        </div>
-                        <div>
-                            <label class="block text-slate-500 mb-1">目前體重 (kg)</label>
-                            <input type="number" id="calc-weight" value="70" class="w-full p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 font-semibold">
-                        </div>
-                        <div class="col-span-2">
-                            <label class="block text-slate-500 mb-1">每週運動與活動量</label>
-                            <select id="calc-activity" class="w-full p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 font-semibold">
-                                <option value="1.2">久坐辦公室、幾乎不運動 (1.2)</option>
-                                <option value="1.375" selected>輕度活動：每週運動 1-3 天 (1.375)</option>
-                                <option value="1.55">中度活動：每週重訓/有氧 3-5 天 (1.55)</option>
-                                <option value="1.725">高度活動：每週高強度訓練 6-7 天 (1.725)</option>
-                            </select>
-                        </div>
-                    </div>
-                    <button onclick="calculateAndApplyTDEE()" class="w-full py-2.5 rounded-xl bg-slate-900 dark:bg-brand-500 text-white text-xs font-bold active:scale-95 transition">
-                        套用建議減脂目標與高蛋白配比
-                    </button>
+                    <h2 class="font-bold text-base">🎯 每日減脂攝取目標（可手動微調）</h2>
                 </div>
 
                 <div class="grid grid-cols-2 gap-3">
@@ -498,10 +638,14 @@
                         <label for="set-target-fat" class="block text-xs font-semibold text-rose-600 dark:text-rose-400 mb-1">脂肪目標 (g)</label>
                         <input type="number" id="set-target-fat" value="55" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm font-bold focus:outline-none focus:border-brand-500">
                     </div>
+                    <div class="col-span-2">
+                        <label for="set-target-water" class="block text-xs font-semibold text-sky-600 dark:text-sky-400 mb-1">每日喝水目標 (ml)（預設為體重 × 35ml）</label>
+                        <input type="number" id="set-target-water" value="2450" step="50" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm font-bold focus:outline-none focus:border-brand-500">
+                    </div>
                 </div>
 
                 <button onclick="saveUserGoals()" class="w-full py-3 rounded-2xl bg-brand-500 text-white font-bold text-sm shadow-md shadow-brand-500/20 active:scale-95 transition">
-                    儲存目標設定
+                    儲存目標與身體設定
                 </button>
             </div>
 
@@ -598,8 +742,20 @@
          */
         const STORAGE_KEYS = {
             GOALS: 'leansnap_goals_v1',
+            PROFILE: 'leansnap_profile_v1',
             LOGS: 'leansnap_logs_v1',
+            WATER: 'leansnap_water_v1',
             API_KEY: 'leansnap_custom_apikey_v1'
+        };
+
+        // 預設個人身體數據
+        let userProfile = {
+            gender: 'male',
+            age: 28,
+            height: 172,
+            weight: 70,
+            activity: '1.375',
+            pace: 'standard'
         };
 
         // 預設減脂目標
@@ -607,11 +763,18 @@
             calories: 1700,
             protein: 130,
             carbs: 170,
-            fat: 55
+            fat: 55,
+            water: 2450
         };
 
         // 飲食紀錄陣列
         let mealLogs = [];
+
+        // 每日喝水紀錄物件 { 'YYYY-MM-DD': 1500 }
+        let waterLogs = {};
+
+        // 暫存 AI 下一餐推薦清單（供一鍵加入紀錄）
+        let lastNextMealSuggestions = [];
 
         // 當前檢視的日期 (YYYY-MM-DD 格式，使用本地時區)
         let selectedDateStr = getLocalDateString(new Date());
@@ -665,6 +828,11 @@
          */
         function initApp() {
             try {
+                const savedProfile = localStorage.getItem(STORAGE_KEYS.PROFILE);
+                if (savedProfile) {
+                    userProfile = { ...userProfile, ...JSON.parse(savedProfile) };
+                }
+
                 const savedGoals = localStorage.getItem(STORAGE_KEYS.GOALS);
                 if (savedGoals) {
                     userGoals = { ...userGoals, ...JSON.parse(savedGoals) };
@@ -675,6 +843,11 @@
                     mealLogs = JSON.parse(savedLogs);
                 }
 
+                const savedWater = localStorage.getItem(STORAGE_KEYS.WATER);
+                if (savedWater) {
+                    waterLogs = JSON.parse(savedWater);
+                }
+
                 const savedKey = localStorage.getItem(STORAGE_KEYS.API_KEY);
                 if (savedKey) {
                     document.getElementById('set-api-key').value = savedKey;
@@ -683,11 +856,21 @@
                 console.error('讀取本機資料失敗:', err);
             }
 
+            // 將個人身體數據填入設定頁面表單
+            document.getElementById('calc-gender').value = userProfile.gender;
+            document.getElementById('calc-age').value = userProfile.age;
+            document.getElementById('calc-height').value = userProfile.height;
+            document.getElementById('calc-weight').value = userProfile.weight;
+            document.getElementById('calc-activity').value = String(userProfile.activity);
+            document.getElementById('calc-pace').value = userProfile.pace || 'standard';
+            updateLiveBmiBadge();
+
             // 將目標數值填入設定頁面表單
             document.getElementById('set-target-cal').value = userGoals.calories;
             document.getElementById('set-target-protein').value = userGoals.protein;
             document.getElementById('set-target-carbs').value = userGoals.carbs;
             document.getElementById('set-target-fat').value = userGoals.fat;
+            document.getElementById('set-target-water').value = userGoals.water || Math.round((userProfile.weight || 70) * 35);
 
             selectMealType(currentScanState.mealType);
             updateDateHeader();
@@ -1308,6 +1491,9 @@
             updateMacroProgress('carbs', totals.carbs, userGoals.carbs);
             updateMacroProgress('fat', totals.fat, userGoals.fat);
 
+            // 更新今日喝水量進度
+            renderWaterWidget();
+
             // 更新餐點列表
             document.getElementById('meal-count-label').textContent = `共 ${dayLogs.length} 筆`;
             const listContainer = document.getElementById('meal-list-container');
@@ -1380,6 +1566,328 @@
         }
 
         /**
+         * ============================================================================
+         * 每日喝水量一鍵打卡與手動輸入邏輯
+         * ============================================================================
+         */
+        function toggleWaterManualInput(forceState) {
+            const box = document.getElementById('water-manual-box');
+            const input = document.getElementById('water-manual-input');
+            const shouldShow = typeof forceState === 'boolean' ? forceState : box.classList.contains('hidden');
+
+            if (shouldShow) {
+                const currentMl = Number(waterLogs[selectedDateStr]) || 0;
+                input.value = currentMl > 0 ? currentMl : '';
+                box.classList.remove('hidden');
+                setTimeout(() => input.focus(), 50);
+            } else {
+                box.classList.add('hidden');
+            }
+        }
+
+        function applyManualWaterInput() {
+            const input = document.getElementById('water-manual-input');
+            const rawVal = input.value.trim();
+            if (rawVal === '') {
+                showToast('請輸入飲水毫升數', '💧');
+                input.focus();
+                return;
+            }
+
+            const prevMl = Number(waterLogs[selectedDateStr]) || 0;
+            const nextMl = Math.max(0, Math.round(parseFloat(rawVal) || 0));
+            waterLogs[selectedDateStr] = nextMl;
+
+            try {
+                localStorage.setItem(STORAGE_KEYS.WATER, JSON.stringify(waterLogs));
+            } catch (err) {
+                console.error('儲存喝水紀錄失敗:', err);
+            }
+
+            renderWaterWidget();
+            toggleWaterManualInput(false);
+
+            const targetWater = userGoals.water || Math.round((userProfile.weight || 70) * 35);
+            if (prevMl < targetWater && nextMl >= targetWater) {
+                showToast(`太棒了！今日喝水量已達標 ${nextMl.toLocaleString()} ml 🎉`, '💧');
+            } else {
+                showToast(`已更新今日喝水量為 ${nextMl.toLocaleString()} ml`, '💧');
+            }
+        }
+
+        function addWater(deltaMl) {
+            const currentMl = Number(waterLogs[selectedDateStr]) || 0;
+            const nextMl = Math.max(0, currentMl + deltaMl);
+            waterLogs[selectedDateStr] = nextMl;
+            try {
+                localStorage.setItem(STORAGE_KEYS.WATER, JSON.stringify(waterLogs));
+            } catch (err) {
+                console.error('儲存喝水紀錄失敗:', err);
+            }
+            renderWaterWidget();
+
+            const targetWater = userGoals.water || Math.round((userProfile.weight || 70) * 35);
+            if (deltaMl > 0) {
+                if (currentMl < targetWater && nextMl >= targetWater) {
+                    showToast(`太棒了！今日喝水量已達標 ${nextMl.toLocaleString()} ml 🎉`, '💧');
+                } else {
+                    showToast(`喝水 +${deltaMl} ml（目前 ${nextMl.toLocaleString()} ml）`, '💧');
+                }
+            } else if (currentMl > 0) {
+                showToast(`已調整為 ${nextMl.toLocaleString()} ml`, '💧');
+            }
+        }
+
+        function renderWaterWidget() {
+            const currentMl = Number(waterLogs[selectedDateStr]) || 0;
+            const targetWater = userGoals.water || Math.round((userProfile.weight || 70) * 35) || 2450;
+            const pct = Math.min(100, Math.round((currentMl / targetWater) * 100));
+
+            document.getElementById('dash-water-val').textContent = currentMl.toLocaleString();
+            document.getElementById('dash-water-target').textContent = targetWater.toLocaleString();
+            document.getElementById('dash-water-bar').style.width = `${pct}%`;
+
+            const badge = document.getElementById('water-pct-badge');
+            if (currentMl >= targetWater) {
+                badge.textContent = '已達標 ✓';
+                badge.className = 'text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300';
+            } else {
+                badge.textContent = `${pct}%`;
+                badge.className = 'text-[10px] font-bold px-2 py-0.5 rounded-full bg-sky-100 dark:bg-sky-950 text-sky-700 dark:text-sky-300';
+            }
+        }
+
+        /**
+         * ============================================================================
+         * 🤖 AI 下一餐外食／超商智能推薦
+         * ============================================================================
+         */
+        function getRemainingMacrosForSelectedDate() {
+            const dayLogs = mealLogs.filter(item => item.date === selectedDateStr);
+            const totals = dayLogs.reduce((acc, item) => {
+                acc.calories += Number(item.calories) || 0;
+                acc.protein += Number(item.protein) || 0;
+                acc.carbs += Number(item.carbs) || 0;
+                acc.fat += Number(item.fat) || 0;
+                return acc;
+            }, { calories: 0, protein: 0, carbs: 0, fat: 0 });
+
+            return {
+                calories: Math.round((userGoals.calories || 1700) - totals.calories),
+                protein: Math.max(0, Number(((userGoals.protein || 130) - totals.protein).toFixed(1))),
+                carbs: Math.max(0, Number(((userGoals.carbs || 170) - totals.carbs).toFixed(1))),
+                fat: Math.max(0, Number(((userGoals.fat || 55) - totals.fat).toFixed(1)))
+            };
+        }
+
+        function openNextMealModal() {
+            const modal = document.getElementById('next-meal-modal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            fetchAiNextMealSuggestions();
+        }
+
+        function closeNextMealModal() {
+            const modal = document.getElementById('next-meal-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        async function fetchAiNextMealSuggestions() {
+            const rem = getRemainingMacrosForSelectedDate();
+            const suggestedMealType = getAutoMealType();
+            const quotaLabel = document.getElementById('next-meal-quota-summary');
+            const contentEl = document.getElementById('next-meal-content');
+            const regenBtn = document.getElementById('regen-next-meal-btn');
+
+            if (rem.calories <= 0) {
+                quotaLabel.textContent = `今日熱量已超出 ${Math.abs(rem.calories)} kcal`;
+            } else {
+                quotaLabel.textContent = `剩餘 ${rem.calories} kcal · 蛋白 ${rem.protein}g · 碳水 ${rem.carbs}g · 脂 ${rem.fat}g`;
+            }
+
+            regenBtn.disabled = true;
+            regenBtn.classList.add('opacity-70');
+            contentEl.innerHTML = `
+                <div class="py-10 flex flex-col items-center justify-center text-center space-y-3">
+                    <div class="w-11 h-11 rounded-full border-4 border-indigo-500 border-t-transparent animate-spin"></div>
+                    <div class="text-sm font-bold text-slate-700 dark:text-slate-200">Gemini 正在為你配餐...</div>
+                    <p class="text-xs text-slate-400 max-w-xs">根據你剩下的熱量與蛋白質缺口，挑選台灣超商與常見外食組合</p>
+                </div>
+            `;
+
+            const customKey = localStorage.getItem(STORAGE_KEYS.API_KEY) || '';
+            const apiKey = customKey.trim();
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+            const systemPrompt = `你是一位熟悉台灣超商（7-ELEVEN、全家）與台灣外食（自助餐、健康餐盒、小吃店、滷味、麵攤）的減脂營養師。請根據使用者今日「剩餘可攝取熱量與三大營養素」，推薦 3 個具體、在台灣隨處買得到的下一餐組合。所有文字請使用繁體中文。`;
+
+            const userPrompt = `現在時間建議餐別為「${suggestedMealType}」。
+使用者今日剩餘額度：
+- 剩餘熱量：${rem.calories} kcal
+- 剩餘蛋白質：${rem.protein} g
+- 剩餘碳水化合物：${rem.carbs} g
+- 剩餘脂肪：${rem.fat} g
+
+請給出 3 個不同場景的具體搭配方案（例如：方案一超商快速組合、方案二健康餐盒/自助餐搭配、方案三麵攤/滷味或輕食補蛋白組合）。
+注意：若剩餘熱量已不足或低於 200 kcal，請提供「零負擔補救／低卡高蛋白止餓方案」（例如無糖豆漿、茶葉蛋、舒肥雞胸肉、無糖綠茶等）。`;
+
+            const payload = {
+                systemInstruction: {
+                    parts: [{ text: systemPrompt }]
+                },
+                contents: [
+                    {
+                        role: 'user',
+                        parts: [{ text: userPrompt }]
+                    }
+                ],
+                generationConfig: {
+                    responseMimeType: 'application/json',
+                    responseSchema: {
+                        type: 'OBJECT',
+                        properties: {
+                            strategyNote: {
+                                type: 'STRING',
+                                description: '一句話總結目前營養素缺口策略（例如：蛋白質還差較多，建議優先選低脂高蛋白食物）'
+                            },
+                            suggestions: {
+                                type: 'ARRAY',
+                                items: {
+                                    type: 'OBJECT',
+                                    properties: {
+                                        tag: { type: 'STRING', description: '場景標籤，例如：🏪 超商組合、🍱 自助餐搭配、🍢 滷味/小吃' },
+                                        title: { type: 'STRING', description: '具體食物組合名稱，例如：無糖高纖豆漿 + 茶葉蛋 2 顆 + 舒肥雞胸肉' },
+                                        calories: { type: 'NUMBER', description: '預估總熱量 (kcal)' },
+                                        protein: { type: 'NUMBER', description: '預估蛋白質 (g)' },
+                                        carbs: { type: 'NUMBER', description: '預估碳水化合物 (g)' },
+                                        fat: { type: 'NUMBER', description: '預估脂肪 (g)' },
+                                        reason: { type: 'STRING', description: '推薦理由與點餐小撇步（45字以內）' }
+                                    },
+                                    required: ['tag', 'title', 'calories', 'protein', 'carbs', 'fat', 'reason']
+                                }
+                            }
+                        },
+                        required: ['strategyNote', 'suggestions']
+                    }
+                }
+            };
+
+            try {
+                const response = await fetchWithRetry(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+                const rawText = result?.candidates?.[0]?.content?.parts?.[0]?.text;
+                if (!rawText) throw new Error('AI 未回傳有效內容');
+
+                const parsed = JSON.parse(rawText);
+                lastNextMealSuggestions = Array.isArray(parsed.suggestions) ? parsed.suggestions : [];
+
+                renderNextMealSuggestions(parsed.strategyNote || '', lastNextMealSuggestions);
+            } catch (error) {
+                console.error('AI 下一餐推薦錯誤:', error);
+                // 提供離線內建備援建議，確保即使 API 異常也有實用選項
+                lastNextMealSuggestions = [
+                    {
+                        tag: '🏪 超商高蛋白組合',
+                        title: '舒肥雞胸肉 1 份 + 茶葉蛋 1 顆 + 無糖高纖豆漿',
+                        calories: 365,
+                        protein: 43,
+                        carbs: 14,
+                        fat: 14,
+                        reason: '熱量低且蛋白質高達 43g，非常適合用來補足當日蛋白質缺口。'
+                    },
+                    {
+                        tag: '🍱 自助餐控卡搭配',
+                        title: '去皮滷雞腿 1 支 + 兩樣清炒時蔬 + 半碗五穀飯',
+                        calories: 480,
+                        protein: 34,
+                        carbs: 48,
+                        fat: 16,
+                        reason: '夾菜時稍微瀝乾湯汁，飯量減半即可兼顧飽足感與熱量赤字。'
+                    },
+                    {
+                        tag: '🍢 滷味清爽點法',
+                        title: '雞胸肉片 + 板豆腐 + 高麗菜 + 金針菇（不加沙茶醬）',
+                        calories: 310,
+                        protein: 32,
+                        carbs: 22,
+                        fat: 9,
+                        reason: '避開加工火鍋料與油炸豆皮，改用蔥花、蒜泥與辣椒提味最減脂。'
+                    }
+                ];
+                renderNextMealSuggestions('連線異常，以下為你精選的台灣減脂外食高蛋白參考組合（可一鍵加入紀錄）：', lastNextMealSuggestions);
+            } finally {
+                regenBtn.disabled = false;
+                regenBtn.classList.remove('opacity-70');
+            }
+        }
+
+        function renderNextMealSuggestions(strategyNote, items) {
+            const contentEl = document.getElementById('next-meal-content');
+            const noteHtml = strategyNote
+                ? `<div class="bg-indigo-50/80 dark:bg-indigo-950/40 border border-indigo-200/70 dark:border-indigo-800/50 rounded-2xl p-3 text-xs text-indigo-900 dark:text-indigo-200 leading-relaxed">💡 ${escapeHtml(strategyNote)}</div>`
+                : '';
+
+            const cardsHtml = items.map((item, idx) => `
+                <div class="bg-slate-50 dark:bg-slate-800/60 rounded-2xl p-3.5 border border-slate-200/80 dark:border-slate-700/70 space-y-2">
+                    <div class="flex items-center justify-between gap-2">
+                        <span class="text-[11px] font-bold px-2 py-0.5 rounded-lg bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 border border-slate-200/70 dark:border-slate-700">
+                            ${escapeHtml(item.tag || '推薦搭配')}
+                        </span>
+                        <span class="text-xs font-extrabold text-brand-600 dark:text-brand-400">${Math.round(item.calories)} kcal</span>
+                    </div>
+                    <h4 class="font-bold text-sm text-slate-900 dark:text-white leading-snug">${escapeHtml(item.title)}</h4>
+                    <div class="flex items-center gap-2 text-[11px] font-semibold">
+                        <span class="text-indigo-600 dark:text-indigo-400">蛋白質 ${Number(item.protein).toFixed(1)}g</span>
+                        <span class="text-slate-300 dark:text-slate-600">·</span>
+                        <span class="text-amber-600 dark:text-amber-400">碳水 ${Number(item.carbs).toFixed(1)}g</span>
+                        <span class="text-slate-300 dark:text-slate-600">·</span>
+                        <span class="text-rose-600 dark:text-rose-400">脂肪 ${Number(item.fat).toFixed(1)}g</span>
+                    </div>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">${escapeHtml(item.reason)}</p>
+                    <button onclick="addSuggestedMealToLog(${idx})" class="w-full mt-1 py-2 px-3 rounded-xl bg-brand-500 hover:bg-brand-600 text-white text-xs font-bold shadow-sm active:scale-95 transition flex items-center justify-center gap-1">
+                        <span>＋</span> 一鍵加入今日紀錄
+                    </button>
+                </div>
+            `).join('');
+
+            contentEl.innerHTML = noteHtml + cardsHtml;
+        }
+
+        function addSuggestedMealToLog(index) {
+            const item = lastNextMealSuggestions[index];
+            if (!item) return;
+
+            const now = new Date();
+            const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+
+            const newEntry = {
+                id: Date.now().toString(),
+                date: selectedDateStr,
+                time: timeStr,
+                mealType: getAutoMealType(),
+                foodName: item.title,
+                grams: 0,
+                calories: Math.round(Number(item.calories) || 0),
+                protein: Number((Number(item.protein) || 0).toFixed(1)),
+                carbs: Number((Number(item.carbs) || 0).toFixed(1)),
+                fat: Number((Number(item.fat) || 0).toFixed(1)),
+                thumbnail: ''
+            };
+
+            mealLogs.unshift(newEntry);
+            persistLogs();
+            renderDashboard();
+            closeNextMealModal();
+            showToast(`已將「${item.title}」加入今日紀錄！`, '✅');
+        }
+
+        /**
          * 刪除紀錄確認彈窗邏輯
          */
         function openConfirmDelete(id) {
@@ -1408,28 +1916,170 @@
 
         /**
          * ============================================================================
-         * 目標設定與 TDEE 減脂計算機
+         * 個人身體數據、AI 熱量試算與 TDEE 計算機
          * ============================================================================
          */
-        function toggleTdeeCalculator() {
-            const panel = document.getElementById('tdee-calculator-panel');
-            panel.classList.toggle('hidden');
+        function readProfileInputs() {
+            const gender = document.getElementById('calc-gender').value;
+            const age = Math.min(100, Math.max(12, parseFloat(document.getElementById('calc-age').value) || 28));
+            const height = Math.min(230, Math.max(100, parseFloat(document.getElementById('calc-height').value) || 170));
+            const weight = Math.min(250, Math.max(30, parseFloat(document.getElementById('calc-weight').value) || 65));
+            const activity = document.getElementById('calc-activity').value || '1.375';
+            const pace = document.getElementById('calc-pace').value || 'standard';
+
+            userProfile = { gender, age, height, weight, activity, pace };
+            localStorage.setItem(STORAGE_KEYS.PROFILE, JSON.stringify(userProfile));
+            return userProfile;
+        }
+
+        function updateLiveBmiBadge() {
+            const height = parseFloat(document.getElementById('calc-height').value) || 0;
+            const weight = parseFloat(document.getElementById('calc-weight').value) || 0;
+            const badge = document.getElementById('profile-bmi-badge');
+            if (height >= 100 && weight >= 30) {
+                const hMeter = height / 100;
+                const bmi = (weight / (hMeter * hMeter)).toFixed(1);
+                badge.textContent = `BMI ${bmi}`;
+            } else {
+                badge.textContent = 'BMI --';
+            }
+        }
+
+        /**
+         * 呼叫 Gemini AI 根據使用者年齡、身高、體重、性別與活動量量身試算每日建議熱量與三大營養素
+         */
+        async function calculateGoalsWithAI() {
+            const profile = readProfileInputs();
+            const btn = document.getElementById('ai-calc-goals-btn');
+            const spinner = document.getElementById('ai-calc-spinner');
+            const btnText = document.getElementById('ai-calc-btn-text');
+
+            btn.disabled = true;
+            btn.classList.add('opacity-80');
+            spinner.classList.remove('hidden');
+            btnText.textContent = 'AI 正在為你量身計算...';
+
+            const activityLabels = {
+                '1.2': '久坐辦公室、幾乎不運動 (活動係數 1.2)',
+                '1.375': '輕度活動：每週運動 1-3 天 (活動係數 1.375)',
+                '1.55': '中度活動：每週重訓/有氧 3-5 天 (活動係數 1.55)',
+                '1.725': '高度活動：每週高強度訓練 6-7 天 (活動係數 1.725)'
+            };
+            const paceLabels = {
+                'gentle': '溫和穩健減脂（每日赤字約 250-300 kcal）',
+                'standard': '標準高蛋白減脂（每日赤字約 350-450 kcal，保留肌肉）',
+                'aggressive': '積極減脂衝刺（每日赤字約 500 kcal，不可低於安全下限）'
+            };
+
+            const customKey = localStorage.getItem(STORAGE_KEYS.API_KEY) || '';
+            const apiKey = customKey.trim();
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+            const systemPrompt = `你是一位專業的台灣運動營養師與減脂教練。請依據使用者的生理性別、年齡、身高、體重、日常活動量與減脂節奏，使用科學公式（如 Mifflin-St Jeor）評估其基礎代謝率（BMR）與每日總消耗熱量（TDEE），並量身規劃安全、可持續的每日減脂目標熱量與三大營養素（高蛋白保肌策略，蛋白質建議約每公斤體重 1.6g～2.0g，女性每日不低於 1200 kcal、男性不低於 1400 kcal）。所有說明請使用繁體中文。`;
+
+            const userPrompt = `請幫這位使用者試算每日減脂攝取目標：
+- 生理性別：${profile.gender === 'male' ? '男性' : '女性'}
+- 年齡：${profile.age} 歲
+- 身高：${profile.height} cm
+- 體重：${profile.weight} kg
+- 活動量：${activityLabels[profile.activity] || profile.activity}
+- 減脂節奏：${paceLabels[profile.pace] || profile.pace}
+
+請回傳計算後的 BMR、TDEE、建議每日攝取熱量、蛋白質(g)、碳水化合物(g)、脂肪(g)，以及簡短的個人化飲食建議。`;
+
+            const payload = {
+                systemInstruction: {
+                    parts: [{ text: systemPrompt }]
+                },
+                contents: [
+                    {
+                        role: 'user',
+                        parts: [{ text: userPrompt }]
+                    }
+                ],
+                generationConfig: {
+                    responseMimeType: 'application/json',
+                    responseSchema: {
+                        type: 'OBJECT',
+                        properties: {
+                            bmr: { type: 'NUMBER', description: '估算基礎代謝率 (kcal)' },
+                            tdee: { type: 'NUMBER', description: '估算每日總熱量消耗 (kcal)' },
+                            targetCalories: { type: 'NUMBER', description: '建議每日減脂攝取熱量 (kcal)' },
+                            protein: { type: 'NUMBER', description: '建議每日蛋白質攝取克數 (g)' },
+                            carbs: { type: 'NUMBER', description: '建議每日碳水化合物攝取克數 (g)' },
+                            fat: { type: 'NUMBER', description: '建議每日脂肪攝取克數 (g)' },
+                            summary: { type: 'STRING', description: '針對此身高體重與年齡的熱量赤字評估說明（60字以內）' },
+                            actionTip: { type: 'STRING', description: '給這位使用者的日常執行小建議（60字以內）' }
+                        },
+                        required: ['bmr', 'tdee', 'targetCalories', 'protein', 'carbs', 'fat', 'summary', 'actionTip']
+                    }
+                }
+            };
+
+            try {
+                const response = await fetchWithRetry(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+                const rawText = result?.candidates?.[0]?.content?.parts?.[0]?.text;
+                if (!rawText) throw new Error('AI 未回傳有效內容');
+
+                const parsed = JSON.parse(rawText);
+
+                const targetCal = Math.max(1100, Math.round(parsed.targetCalories || 1600));
+                const protein = Math.max(40, Math.round(parsed.protein || 120));
+                const carbs = Math.max(30, Math.round(parsed.carbs || 150));
+                const fat = Math.max(20, Math.round(parsed.fat || 50));
+                const waterTarget = Math.max(1500, Math.round(profile.weight * 35));
+
+                // 自動填入下方目標欄位並同步儲存更新儀表板
+                document.getElementById('set-target-cal').value = targetCal;
+                document.getElementById('set-target-protein').value = protein;
+                document.getElementById('set-target-carbs').value = carbs;
+                document.getElementById('set-target-fat').value = fat;
+                document.getElementById('set-target-water').value = waterTarget;
+
+                userGoals = { calories: targetCal, protein, carbs, fat, water: waterTarget };
+                localStorage.setItem(STORAGE_KEYS.GOALS, JSON.stringify(userGoals));
+                renderDashboard();
+
+                // 顯示 AI 評估報告
+                const reportBox = document.getElementById('ai-goal-report-box');
+                document.getElementById('ai-report-metrics').textContent = `BMR ${Math.round(parsed.bmr)} · TDEE ${Math.round(parsed.tdee)} kcal`;
+                document.getElementById('ai-report-summary').textContent = parsed.summary || '';
+                document.getElementById('ai-report-tips').textContent = `💡 執行建議：${parsed.actionTip || ''}`;
+                reportBox.classList.remove('hidden');
+
+                showToast(`AI 試算完成！每日建議 ${targetCal} kcal，已自動套用`, '✨');
+            } catch (error) {
+                console.error('AI 熱量試算錯誤:', error);
+                showToast('AI 連線異常，已自動改用科學公式為你計算！', '🧮');
+                calculateAndApplyTDEE();
+            } finally {
+                btn.disabled = false;
+                btn.classList.remove('opacity-80');
+                spinner.classList.add('hidden');
+                btnText.textContent = '✨ AI 試算專屬熱量與營養素';
+            }
         }
 
         function calculateAndApplyTDEE() {
-            const gender = document.getElementById('calc-gender').value;
-            const age = parseFloat(document.getElementById('calc-age').value) || 28;
-            const height = parseFloat(document.getElementById('calc-height').value) || 170;
-            const weight = parseFloat(document.getElementById('calc-weight').value) || 65;
-            const activity = parseFloat(document.getElementById('calc-activity').value) || 1.375;
+            const profile = readProfileInputs();
+            const { gender, age, height, weight, pace } = profile;
+            const activity = parseFloat(profile.activity) || 1.375;
 
             // Mifflin-St Jeor 公式計算基礎代謝率 (BMR)
             let bmr = (10 * weight) + (6.25 * height) - (5 * age);
             bmr += (gender === 'male') ? 5 : -161;
 
             const tdee = bmr * activity;
-            // 減脂期建議製造約 350 kcal 熱量赤字，且不低於基礎代謝太多
-            const cutCalories = Math.max(1200, Math.round(tdee - 350));
+            const deficitMap = { gentle: 250, standard: 380, aggressive: 500 };
+            const deficit = deficitMap[pace] || 380;
+            const minSafeCal = gender === 'male' ? 1400 : 1200;
+            const cutCalories = Math.max(minSafeCal, Math.round(tdee - deficit));
 
             // 減脂高蛋白建議：每公斤體重 1.8g 蛋白質
             const proteinGrams = Math.round(weight * 1.8);
@@ -1438,26 +2088,40 @@
             // 剩餘熱量分配給碳水化合物
             const remainingCalForCarbs = Math.max(0, cutCalories - (proteinGrams * 4) - (fatGrams * 9));
             const carbsGrams = Math.round(remainingCalForCarbs / 4);
+            const waterTarget = Math.max(1500, Math.round(weight * 35));
 
             document.getElementById('set-target-cal').value = cutCalories;
             document.getElementById('set-target-protein').value = proteinGrams;
             document.getElementById('set-target-carbs').value = carbsGrams;
             document.getElementById('set-target-fat').value = fatGrams;
+            document.getElementById('set-target-water').value = waterTarget;
 
-            showToast(`TDEE 約 ${Math.round(tdee)} kcal，已填入減脂赤字目標！`, '🧮');
+            userGoals = { calories: cutCalories, protein: proteinGrams, carbs: carbsGrams, fat: fatGrams, water: waterTarget };
+            localStorage.setItem(STORAGE_KEYS.GOALS, JSON.stringify(userGoals));
+            renderDashboard();
+
+            const reportBox = document.getElementById('ai-goal-report-box');
+            document.getElementById('ai-report-metrics').textContent = `BMR ${Math.round(bmr)} · TDEE ${Math.round(tdee)} kcal`;
+            document.getElementById('ai-report-summary').textContent = `依你的年齡（${age}歲）、身高（${height}cm）與體重（${weight}kg），每日總消耗約 ${Math.round(tdee)} kcal，已為你設定約 ${deficit} kcal 的減脂熱量赤字。`;
+            document.getElementById('ai-report-tips').textContent = `💡 執行建議：每日蛋白質設定為每公斤體重 1.8g（${proteinGrams}g），有助於減脂期間維持肌肉量與飽足感。`;
+            reportBox.classList.remove('hidden');
+
+            showToast(`TDEE 約 ${Math.round(tdee)} kcal，已套用並更新目標！`, '🧮');
         }
 
         function saveUserGoals() {
+            readProfileInputs();
             userGoals = {
                 calories: Math.max(800, Math.round(parseFloat(document.getElementById('set-target-cal').value) || 1700)),
                 protein: Math.max(30, Math.round(parseFloat(document.getElementById('set-target-protein').value) || 130)),
                 carbs: Math.max(20, Math.round(parseFloat(document.getElementById('set-target-carbs').value) || 170)),
-                fat: Math.max(15, Math.round(parseFloat(document.getElementById('set-target-fat').value) || 55))
+                fat: Math.max(15, Math.round(parseFloat(document.getElementById('set-target-fat').value) || 55)),
+                water: Math.max(1000, Math.round(parseFloat(document.getElementById('set-target-water').value) || 2450))
             };
 
             localStorage.setItem(STORAGE_KEYS.GOALS, JSON.stringify(userGoals));
             renderDashboard();
-            showToast('減脂目標已儲存並更新儀表板！', '🎯');
+            showToast('減脂目標與身體數據已儲存！', '🎯');
         }
 
         function saveApiKey() {
@@ -1478,10 +2142,12 @@
          */
         function buildBackupPayload() {
             return JSON.stringify({
-                version: 1,
+                version: 2,
                 exportedAt: new Date().toISOString(),
+                profile: userProfile,
                 goals: userGoals,
-                logs: mealLogs
+                logs: mealLogs,
+                water: waterLogs
             });
         }
 
@@ -1525,6 +2191,17 @@
             if (!parsed || !Array.isArray(parsed.logs)) {
                 throw new Error('備份格式不正確');
             }
+            if (parsed.profile) {
+                userProfile = { ...userProfile, ...parsed.profile };
+                localStorage.setItem(STORAGE_KEYS.PROFILE, JSON.stringify(userProfile));
+                document.getElementById('calc-gender').value = userProfile.gender;
+                document.getElementById('calc-age').value = userProfile.age;
+                document.getElementById('calc-height').value = userProfile.height;
+                document.getElementById('calc-weight').value = userProfile.weight;
+                document.getElementById('calc-activity').value = String(userProfile.activity);
+                document.getElementById('calc-pace').value = userProfile.pace || 'standard';
+                updateLiveBmiBadge();
+            }
             if (parsed.goals) {
                 userGoals = { ...userGoals, ...parsed.goals };
                 localStorage.setItem(STORAGE_KEYS.GOALS, JSON.stringify(userGoals));
@@ -1532,6 +2209,11 @@
                 document.getElementById('set-target-protein').value = userGoals.protein;
                 document.getElementById('set-target-carbs').value = userGoals.carbs;
                 document.getElementById('set-target-fat').value = userGoals.fat;
+                document.getElementById('set-target-water').value = userGoals.water || 2450;
+            }
+            if (parsed.water && typeof parsed.water === 'object') {
+                waterLogs = parsed.water;
+                localStorage.setItem(STORAGE_KEYS.WATER, JSON.stringify(waterLogs));
             }
             mealLogs = parsed.logs;
             persistLogs();

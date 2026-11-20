@@ -98,6 +98,75 @@
         </div>
     </div>
 
+    <!-- 編輯飲食紀錄彈窗 -->
+    <div id="edit-meal-modal" onclick="if(event.target === this) closeEditMealModal()" class="fixed inset-0 z-50 hidden items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-3 sm:p-4">
+        <div class="bg-white dark:bg-slate-900 w-full max-w-md rounded-3xl p-5 shadow-2xl border border-slate-200 dark:border-slate-800 space-y-4 max-h-[88vh] overflow-y-auto no-scrollbar">
+            <div class="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
+                <h3 class="text-base font-extrabold flex items-center gap-1.5">
+                    <span>✏️</span> 編輯飲食紀錄
+                </h3>
+                <button type="button" onclick="closeEditMealModal()" class="p-1.5 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 active:scale-90 transition" aria-label="關閉編輯視窗">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+
+            <!-- 餐別選擇 -->
+            <div>
+                <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1.5">餐別</label>
+                <div class="grid grid-cols-4 gap-2" id="edit-meal-type-selector">
+                    <button type="button" data-meal="早餐" onclick="selectEditMealType('早餐')" class="edit-meal-type-btn py-2 rounded-xl text-xs font-bold border border-slate-200 dark:border-slate-700 transition">🌅 早餐</button>
+                    <button type="button" data-meal="午餐" onclick="selectEditMealType('午餐')" class="edit-meal-type-btn py-2 rounded-xl text-xs font-bold border border-slate-200 dark:border-slate-700 transition">☀️ 午餐</button>
+                    <button type="button" data-meal="晚餐" onclick="selectEditMealType('晚餐')" class="edit-meal-type-btn py-2 rounded-xl text-xs font-bold border border-slate-200 dark:border-slate-700 transition">🌙 晚餐</button>
+                    <button type="button" data-meal="點心" onclick="selectEditMealType('點心')" class="edit-meal-type-btn py-2 rounded-xl text-xs font-bold border border-slate-200 dark:border-slate-700 transition">🍎 點心</button>
+                </div>
+            </div>
+
+            <!-- 食物名稱與重量 -->
+            <div class="grid grid-cols-3 gap-3">
+                <div class="col-span-2">
+                    <label for="edit-food-name" class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">食物名稱</label>
+                    <input type="text" id="edit-food-name" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm font-semibold focus:outline-none focus:border-brand-500">
+                </div>
+                <div>
+                    <label for="edit-grams" class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">重量 (g)</label>
+                    <input type="number" id="edit-grams" min="0" class="w-full px-3 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm font-semibold focus:outline-none focus:border-brand-500">
+                </div>
+            </div>
+
+            <!-- 熱量與三大營養素 -->
+            <div class="grid grid-cols-2 gap-3">
+                <div class="col-span-2 bg-brand-50/70 dark:bg-brand-950/30 p-3 rounded-2xl border border-brand-200/60 dark:border-brand-800/40 flex items-center justify-between">
+                    <label for="edit-calories" class="text-xs font-bold text-brand-800 dark:text-brand-300">總熱量 (kcal)</label>
+                    <input type="number" id="edit-calories" min="0" class="w-28 text-right px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-brand-300 dark:border-brand-700 text-base font-extrabold text-brand-600 dark:text-brand-400 focus:outline-none">
+                </div>
+
+                <div class="bg-slate-50 dark:bg-slate-800/60 p-3 rounded-2xl">
+                    <label for="edit-protein" class="block text-xs font-bold text-indigo-600 dark:text-indigo-400 mb-1">蛋白質 (g)</label>
+                    <input type="number" id="edit-protein" min="0" step="0.1" class="w-full px-3 py-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-sm font-extrabold focus:outline-none">
+                </div>
+
+                <div class="bg-slate-50 dark:bg-slate-800/60 p-3 rounded-2xl">
+                    <label for="edit-carbs" class="block text-xs font-bold text-amber-600 dark:text-amber-400 mb-1">碳水化合物 (g)</label>
+                    <input type="number" id="edit-carbs" min="0" step="0.1" class="w-full px-3 py-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-sm font-extrabold focus:outline-none">
+                </div>
+
+                <div class="col-span-2 bg-slate-50 dark:bg-slate-800/60 p-3 rounded-2xl flex items-center justify-between">
+                    <label for="edit-fat" class="text-xs font-bold text-rose-600 dark:text-rose-400">脂肪 (g)</label>
+                    <input type="number" id="edit-fat" min="0" step="0.1" class="w-28 text-right px-3 py-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-sm font-extrabold focus:outline-none">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3 pt-1">
+                <button type="button" onclick="closeEditMealModal()" class="py-3 px-4 rounded-xl font-bold text-xs bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 active:scale-95 transition">
+                    取消
+                </button>
+                <button type="button" onclick="saveEditedMeal()" class="py-3 px-4 rounded-xl font-extrabold text-xs bg-brand-500 hover:bg-brand-600 text-white shadow-lg shadow-brand-500/25 active:scale-95 transition">
+                    儲存修改
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- 月曆日期選擇器彈窗 -->
     <div id="calendar-modal" onclick="if(event.target === this) closeCalendarModal()" class="fixed inset-0 z-50 hidden items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-3 sm:p-4">
         <div class="bg-white dark:bg-slate-900 w-full max-w-sm rounded-3xl p-5 shadow-2xl border border-slate-200 dark:border-slate-800 transform transition-all mb-1 sm:mb-0">
@@ -801,6 +870,8 @@
         };
 
         let pendingDeleteId = null;
+        let editingMealId = null;
+        let editingMealType = '午餐';
 
         /**
          * 取得本地日期字串 YYYY-MM-DD
@@ -1539,9 +1610,14 @@
                                 <span class="text-slate-400 text-[11px]">碳 ${item.carbs}g · 脂 ${item.fat}g</span>
                             </div>
                         </div>
-                        <button onclick="openConfirmDelete('${item.id}')" class="p-2.5 rounded-xl text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/50 active:scale-90 transition" aria-label="刪除紀錄">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                        </button>
+                        <div class="flex flex-col sm:flex-row items-center gap-1 flex-shrink-0">
+                            <button onclick="openEditMealModal('${item.id}')" class="p-2 rounded-xl text-slate-400 hover:text-brand-600 hover:bg-brand-50 dark:hover:bg-brand-950/50 active:scale-90 transition" aria-label="編輯紀錄" title="編輯紀錄">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                            </button>
+                            <button onclick="openConfirmDelete('${item.id}')" class="p-2 rounded-xl text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/50 active:scale-90 transition" aria-label="刪除紀錄" title="刪除紀錄">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                            </button>
+                        </div>
                     </div>
                 `;
             }).join('');
@@ -1913,6 +1989,76 @@
             }
             closeConfirmModal();
         });
+
+        /**
+         * ============================================================================
+         * 編輯已儲存的飲食紀錄
+         * ============================================================================
+         */
+        function selectEditMealType(mealType) {
+            editingMealType = mealType;
+            document.querySelectorAll('.edit-meal-type-btn').forEach(btn => {
+                if (btn.dataset.meal === mealType) {
+                    btn.className = 'edit-meal-type-btn py-2 rounded-xl text-xs font-bold border border-brand-500 bg-brand-50 dark:bg-brand-950/60 text-brand-700 dark:text-brand-300 transition';
+                } else {
+                    btn.className = 'edit-meal-type-btn py-2 rounded-xl text-xs font-bold border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 transition';
+                }
+            });
+        }
+
+        function openEditMealModal(id) {
+            const target = mealLogs.find(item => item.id === id);
+            if (!target) return;
+
+            editingMealId = id;
+            selectEditMealType(target.mealType || '午餐');
+            document.getElementById('edit-food-name').value = target.foodName || '';
+            document.getElementById('edit-grams').value = target.grams || '';
+            document.getElementById('edit-calories').value = target.calories ?? 0;
+            document.getElementById('edit-protein').value = target.protein ?? 0;
+            document.getElementById('edit-carbs').value = target.carbs ?? 0;
+            document.getElementById('edit-fat').value = target.fat ?? 0;
+
+            const modal = document.getElementById('edit-meal-modal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeEditMealModal() {
+            editingMealId = null;
+            const modal = document.getElementById('edit-meal-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        function saveEditedMeal() {
+            if (!editingMealId) return;
+            const idx = mealLogs.findIndex(item => item.id === editingMealId);
+            if (idx === -1) return;
+
+            const name = document.getElementById('edit-food-name').value.trim();
+            if (!name) {
+                showToast('請輸入食物名稱再儲存', '✍️');
+                document.getElementById('edit-food-name').focus();
+                return;
+            }
+
+            mealLogs[idx] = {
+                ...mealLogs[idx],
+                mealType: editingMealType,
+                foodName: name,
+                grams: Math.round(parseFloat(document.getElementById('edit-grams').value) || 0),
+                calories: Math.round(parseFloat(document.getElementById('edit-calories').value) || 0),
+                protein: Number((parseFloat(document.getElementById('edit-protein').value) || 0).toFixed(1)),
+                carbs: Number((parseFloat(document.getElementById('edit-carbs').value) || 0).toFixed(1)),
+                fat: Number((parseFloat(document.getElementById('edit-fat').value) || 0).toFixed(1))
+            };
+
+            persistLogs();
+            renderDashboard();
+            closeEditMealModal();
+            showToast(`已更新「${name}」的紀錄！`, '✅');
+        }
 
         /**
          * ============================================================================

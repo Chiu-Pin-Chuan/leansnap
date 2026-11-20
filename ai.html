@@ -520,6 +520,34 @@
                 </div>
             </div>
 
+            <!-- 飲食紀錄與設定備份還原 -->
+            <div class="bg-white dark:bg-slate-900 rounded-3xl p-5 shadow-sm border border-slate-200/80 dark:border-slate-800 space-y-3">
+                <div class="flex items-center justify-between">
+                    <h2 class="font-bold text-base">💾 飲食紀錄備份與還原</h2>
+                    <span class="text-[11px] px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-semibold">防遺失保護</span>
+                </div>
+                <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                    iOS 若移除桌面圖示會清除該捷徑的本機紀錄。建議定期備份，隨時可透過備份檔或備份碼還原所有餐點與目標。
+                </p>
+                <div class="grid grid-cols-2 gap-2.5">
+                    <button onclick="exportBackupFile()" class="py-2.5 px-3 rounded-xl bg-brand-50 dark:bg-brand-950/60 text-brand-700 dark:text-brand-300 border border-brand-200/80 dark:border-brand-800/50 text-xs font-bold flex items-center justify-center gap-1.5 active:scale-95 transition">
+                        <span>⬇️</span> 下載備份檔
+                    </button>
+                    <button onclick="copyBackupText()" class="py-2.5 px-3 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs font-bold flex items-center justify-center gap-1.5 active:scale-95 transition">
+                        <span>📋</span> 複製備份碼
+                    </button>
+                </div>
+                <div class="pt-1">
+                    <input type="file" id="restore-file-input" accept=".json,application/json" class="hidden" onchange="importBackupFile(event)">
+                    <div class="flex gap-2">
+                        <input type="text" id="restore-code-input" placeholder="貼上備份碼，或點右側選取 .json 檔還原" class="flex-1 px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs focus:outline-none focus:border-brand-500">
+                        <button onclick="restoreFromInputOrFile()" class="px-3.5 py-2 rounded-xl bg-slate-900 dark:bg-brand-500 text-white text-xs font-bold active:scale-95 transition whitespace-nowrap">
+                            還原
+                        </button>
+                    </div>
+                </div>
+            </div>
+
             <!-- iPhone Safari 加入主畫面使用教學 -->
             <div class="bg-gradient-to-br from-slate-900 to-slate-800 text-white rounded-3xl p-5 shadow-sm space-y-3">
                 <div class="flex items-center gap-2">
@@ -1441,6 +1469,103 @@
                 localStorage.removeItem(STORAGE_KEYS.API_KEY);
                 showToast('已清除自訂金鑰，將使用預設連線', '🔑');
             }
+        }
+
+        /**
+         * ============================================================================
+         * 資料備份與還原功能 (JSON 檔案與文字備份碼)
+         * ============================================================================
+         */
+        function buildBackupPayload() {
+            return JSON.stringify({
+                version: 1,
+                exportedAt: new Date().toISOString(),
+                goals: userGoals,
+                logs: mealLogs
+            });
+        }
+
+        function exportBackupFile() {
+            try {
+                const jsonStr = buildBackupPayload();
+                const blob = new Blob([jsonStr], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `leansnap-backup-${selectedDateStr}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                showToast('已匯出備份檔！', '💾');
+            } catch (err) {
+                console.error('匯出備份檔失敗:', err);
+                showToast('匯出失敗，請改用「複製備份碼」', '⚠️');
+            }
+        }
+
+        function copyBackupText() {
+            try {
+                const jsonStr = buildBackupPayload();
+                const tempInput = document.createElement('textarea');
+                tempInput.value = jsonStr;
+                document.body.appendChild(tempInput);
+                tempInput.select();
+                document.execCommand('copy');
+                document.body.removeChild(tempInput);
+                showToast('已複製備份碼，可貼到備忘錄保存！', '📋');
+            } catch (err) {
+                console.error('複製備份碼失敗:', err);
+                showToast('複製失敗，請改用下載備份檔', '⚠️');
+            }
+        }
+
+        function applyRestoredData(rawJson) {
+            const parsed = JSON.parse(rawJson);
+            if (!parsed || !Array.isArray(parsed.logs)) {
+                throw new Error('備份格式不正確');
+            }
+            if (parsed.goals) {
+                userGoals = { ...userGoals, ...parsed.goals };
+                localStorage.setItem(STORAGE_KEYS.GOALS, JSON.stringify(userGoals));
+                document.getElementById('set-target-cal').value = userGoals.calories;
+                document.getElementById('set-target-protein').value = userGoals.protein;
+                document.getElementById('set-target-carbs').value = userGoals.carbs;
+                document.getElementById('set-target-fat').value = userGoals.fat;
+            }
+            mealLogs = parsed.logs;
+            persistLogs();
+            renderDashboard();
+            showToast(`成功還原 ${mealLogs.length} 筆飲食紀錄！`, '🎉');
+        }
+
+        function restoreFromInputOrFile() {
+            const codeVal = document.getElementById('restore-code-input').value.trim();
+            if (codeVal) {
+                try {
+                    applyRestoredData(codeVal);
+                    document.getElementById('restore-code-input').value = '';
+                } catch (err) {
+                    showToast('備份碼格式錯誤，請確認完整貼上', '⚠️');
+                }
+            } else {
+                document.getElementById('restore-file-input').click();
+            }
+        }
+
+        function importBackupFile(event) {
+            const file = event.target.files?.[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    applyRestoredData(e.target.result);
+                } catch (err) {
+                    showToast('備份檔讀取失敗，請確認檔案正確', '⚠️');
+                }
+            };
+            reader.readAsText(file);
+            event.target.value = '';
         }
 
         // 啟動應用
